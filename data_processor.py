@@ -3,6 +3,7 @@
 """
 import json
 import random
+from collections import defaultdict
 from config import *
 
 class RecipeQAProcessor:
@@ -12,29 +13,68 @@ class RecipeQAProcessor:
                 "{recipe_name} 어떻게 만들어?",
                 "{recipe_name} 만드는 방법 알려줘",
                 "{recipe_name} 조리법이 뭐야?",
-                "{recipe_name} 요리하는 법"
+                "{recipe_name} 요리하는 법",
+                "{recipe_name} 만드는 순서",
+                "{recipe_name} 조리 과정"
             ],
             'ingredients': [
                 "{recipe_name}에 뭐가 들어가?",
                 "{recipe_name} 재료가 뭐야?",
                 "{recipe_name} 만들 때 필요한 재료",
-                "{recipe_name}의 재료 목록"
+                "{recipe_name}의 재료 목록",
+                "{recipe_name} 들어가는 재료",
+                "{recipe_name} 필요한 것들"
             ],
             'recipe_search': [
                 "{ingredient}로 뭐 만들 수 있어?",
                 "{ingredient} 요리 추천해줘",
                 "{ingredient}를 사용한 음식",
-                "{ingredient} 들어간 요리"
+                "{ingredient} 들어간 요리",
+                "{ingredient} 넣어서 뭐 만들까?",
+                "{ingredient}가 들어간 요리는?"
             ]
         }
+        
+        # 일반 QA 추가
+        self.general_qa = [
+            {
+                'question': '안녕하세요',
+                'context': '레시피 챗봇 인사말',
+                'answer': '안녕하세요! 레시피 챗봇입니다. 요리에 대해 무엇이든 물어보세요!',
+                'type': 'greeting'
+            },
+            {
+                'question': '안녕',
+                'context': '레시피 챗봇 인사말',
+                'answer': '안녕하세요! 오늘은 어떤 요리를 만들어보고 싶으신가요?',
+                'type': 'greeting'
+            },
+            {
+                'question': '도움말',
+                'context': '레시피 챗봇 사용법',
+                'answer': '레시피 챗봇 사용법: 1. 재료로 요리 검색 2. 특정 요리 레시피 3. 요리 재료 확인',
+                'type': 'help'
+            }
+        ]
     
     def load_recipes(self):
         """레시피 데이터 로드"""
         try:
             with open(RAW_DATA_PATH, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                recipes = json.load(f)
+            
+            if not recipes:
+                print("레시피 데이터가 비어있습니다.")
+                return []
+            
+            print(f"레시피 데이터 로드: {len(recipes)}개")
+            return recipes
+            
         except FileNotFoundError:
             print("레시피 데이터 파일이 없습니다. 먼저 data_collector.py를 실행하세요.")
+            return []
+        except Exception as e:
+            print(f"레시피 데이터 로드 실패: {e}")
             return []
     
     def generate_cooking_method_qa(self, recipe):
@@ -43,24 +83,25 @@ class RecipeQAProcessor:
         recipe_name = recipe['name']
         steps = recipe['steps']
         
-        if len(steps) < 2:
+        if len(steps) < 1:
             return qa_pairs
         
         # 조리 과정을 context로 만들기
-        context = f"{recipe_name} 만드는 방법: " + " ".join(steps)
+        context = f"{recipe_name} 만드는 방법: " + " ".join(steps[:3])
         
         for template in self.qa_templates['cooking_method']:
             question = template.format(recipe_name=recipe_name)
             
-            # 답변은 첫 번째 조리 단계로 설정 (간단하게)
+            # 답변은 첫 번째 조리 단계로 설정
             answer = steps[0] if steps else ""
             
-            qa_pairs.append({
-                'question': question,
-                'context': context,
-                'answer': answer,
-                'type': 'cooking_method'
-            })
+            if answer:
+                qa_pairs.append({
+                    'question': question,
+                    'context': context,
+                    'answer': answer,
+                    'type': 'cooking_method'
+                })
         
         return qa_pairs
     
@@ -70,17 +111,17 @@ class RecipeQAProcessor:
         recipe_name = recipe['name']
         ingredients = recipe['ingredients']
         
-        if len(ingredients) < 2:
+        if len(ingredients) < 1:
             return qa_pairs
         
         # 재료 목록을 context로 만들기
-        ingredients_text = ", ".join(ingredients)
+        ingredients_text = ", ".join(ingredients[:5])
         context = f"{recipe_name}의 재료: {ingredients_text}"
         
         for template in self.qa_templates['ingredients']:
             question = template.format(recipe_name=recipe_name)
             
-            # 답변은 주요 재료 2-3개로 설정
+            # 답변은 주요 재료 3개로 설정
             answer = ", ".join(ingredients[:3])
             
             qa_pairs.append({
@@ -97,14 +138,11 @@ class RecipeQAProcessor:
         qa_pairs = []
         
         # 재료별로 레시피 그룹화
-        ingredient_recipes = {}
+        ingredient_recipes = defaultdict(list)
         for recipe in recipes:
             for ingredient in recipe['ingredients']:
-                # 주요 재료만 추출 (길이 2 이상)
                 if len(ingredient) >= 2:
                     clean_ingredient = ingredient.strip()
-                    if clean_ingredient not in ingredient_recipes:
-                        ingredient_recipes[clean_ingredient] = []
                     ingredient_recipes[clean_ingredient].append(recipe['name'])
         
         # 2개 이상의 레시피가 있는 재료만 사용
@@ -114,12 +152,12 @@ class RecipeQAProcessor:
                 unique_recipes = list(set(recipe_names))
                 
                 # context는 해당 재료로 만들 수 있는 요리들
-                context = f"{ingredient}로 만들 수 있는 요리: " + ", ".join(unique_recipes)
+                context = f"{ingredient}로 만들 수 있는 요리: " + ", ".join(unique_recipes[:5])
                 
                 for template in self.qa_templates['recipe_search']:
                     question = template.format(ingredient=ingredient)
                     
-                    # 답변은 대표 요리 1-2개
+                    # 답변은 대표 요리 2개
                     answer = ", ".join(unique_recipes[:2])
                     
                     qa_pairs.append({
@@ -132,7 +170,7 @@ class RecipeQAProcessor:
         return qa_pairs
     
     def process_for_bert(self, qa_pairs):
-        """BERT 입력 형태로 변환 ([CLS] 질문 [SEP] 지문 [SEP])"""
+        """BERT 입력 형태로 변환"""
         processed_data = []
         
         for qa in qa_pairs:
@@ -143,7 +181,7 @@ class RecipeQAProcessor:
             # BERT 입력 형태로 변환
             input_text = f"[CLS] {question} [SEP] {context} [SEP]"
             
-            # 답변의 시작과 끝 위치 찾기 (간단하게 context에서 찾기)
+            # 답변의 시작과 끝 위치 찾기
             context_start = input_text.find(context)
             answer_start = context.find(answer)
             
@@ -170,19 +208,28 @@ class RecipeQAProcessor:
         
         recipes = self.load_recipes()
         if not recipes:
+            print("유효한 레시피 데이터가 없습니다.")
             return
         
         all_qa_pairs = []
         
         # 각 레시피에 대해 조리법, 재료 QA 생성
         for recipe in recipes:
-            all_qa_pairs.extend(self.generate_cooking_method_qa(recipe))
-            all_qa_pairs.extend(self.generate_ingredients_qa(recipe))
+            if recipe.get('name'):
+                all_qa_pairs.extend(self.generate_cooking_method_qa(recipe))
+                all_qa_pairs.extend(self.generate_ingredients_qa(recipe))
         
         # 재료 검색 QA 생성
         all_qa_pairs.extend(self.generate_recipe_search_qa(recipes))
         
+        # 일반 QA 추가
+        all_qa_pairs.extend(self.general_qa)
+        
         print(f"총 {len(all_qa_pairs)}개 QA 쌍 생성")
+        
+        if not all_qa_pairs:
+            print("생성된 QA가 없습니다.")
+            return
         
         # BERT 형태로 변환
         processed_data = self.process_for_bert(all_qa_pairs)

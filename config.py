@@ -15,9 +15,9 @@ RECIPE_PROCESS_SERVICE = "Grid_20150827000000000228_1"     # 레시피 과정정
 # 모델 설정
 MODEL_NAME = "beomi/kcbert-base"
 MAX_LENGTH = 256
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 LEARNING_RATE = 2e-5
-NUM_EPOCHS = 3
+NUM_EPOCHS = 10
 
 # 디렉토리 설정
 DATA_DIR = "data"
