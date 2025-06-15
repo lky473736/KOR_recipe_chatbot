@@ -35,24 +35,30 @@ class RecipeQAProcessor:
             ]
         }
         
-        # 일반 QA 추가
+        # 일반 QA 추가 (더 길고 자세하게)
         self.general_qa = [
             {
                 'question': '안녕하세요',
-                'context': '레시피 챗봇 인사말',
-                'answer': '안녕하세요! 레시피 챗봇입니다. 요리에 대해 무엇이든 물어보세요!',
+                'context': '레시피 챗봇 인사말: 안녕하세요! 농림축산식품부 공공데이터 기반 레시피 챗봇입니다. 537개의 다양한 한국 요리 레시피를 알고 있어서, 요리 방법이나 재료에 대해 무엇이든 물어보세요! 맛있는 요리 만들기를 도와드릴게요',
+                'answer': '레시피 챗봇 인사말: 안녕하세요! 농림축산식품부 공공데이터 기반 레시피 챗봇입니다. 537개의 다양한 한국 요리 레시피를 알고 있어서, 요리 방법이나 재료에 대해 무엇이든 물어보세요! 맛있는 요리 만들기를 도와드릴게요',
                 'type': 'greeting'
             },
             {
                 'question': '안녕',
-                'context': '레시피 챗봇 인사말',
-                'answer': '안녕하세요! 오늘은 어떤 요리를 만들어보고 싶으신가요?',
+                'context': '레시피 챗봇 인사말: 안녕하세요! 오늘은 어떤 요리를 만들어보고 싶으신가요? 한국의 전통 요리부터 간단한 집밥까지 다양한 레시피를 알려드릴 수 있어요. 편하게 물어보세요!',
+                'answer': '레시피 챗봇 인사말: 안녕하세요! 오늘은 어떤 요리를 만들어보고 싶으신가요? 한국의 전통 요리부터 간단한 집밥까지 다양한 레시피를 알려드릴 수 있어요. 편하게 물어보세요!',
                 'type': 'greeting'
             },
             {
                 'question': '도움말',
-                'context': '레시피 챗봇 사용법',
-                'answer': '레시피 챗봇 사용법: 1. 재료로 요리 검색 2. 특정 요리 레시피 3. 요리 재료 확인',
+                'context': '레시피 챗봇 사용법: 1. 재료로 요리 검색 - 감자로 뭐 만들 수 있어? 2. 특정 요리 만드는 법 - 김치찌개 어떻게 만들어? 3. 요리 재료 확인 - 불고기 재료가 뭐야? 이런 식으로 자연스럽게 물어보시면 친절하게 답변해드릴게요!',
+                'answer': '레시피 챗봇 사용법: 1. 재료로 요리 검색 - 감자로 뭐 만들 수 있어? 2. 특정 요리 만드는 법 - 김치찌개 어떻게 만들어? 3. 요리 재료 확인 - 불고기 재료가 뭐야? 이런 식으로 자연스럽게 물어보시면 친절하게 답변해드릴게요!',
+                'type': 'help'
+            },
+            {
+                'question': '뭐 해줄 수 있어',
+                'context': '레시피 챗봇 기능: 저는 요리와 관련해서 많은 도움을 드릴 수 있어요! 특정 재료로 만들 수 있는 요리 추천, 요리 만드는 방법 상세 설명, 필요한 재료 목록 안내, 요리 카테고리별 추천 등을 할 수 있습니다. 537개의 한국 요리 레시피가 준비되어 있으니 언제든 물어보세요!',
+                'answer': '레시피 챗봇 기능: 저는 요리와 관련해서 많은 도움을 드릴 수 있어요! 특정 재료로 만들 수 있는 요리 추천, 요리 만드는 방법 상세 설명, 필요한 재료 목록 안내, 요리 카테고리별 추천 등을 할 수 있습니다. 537개의 한국 요리 레시피가 준비되어 있으니 언제든 물어보세요!',
                 'type': 'help'
             }
         ]
@@ -86,22 +92,21 @@ class RecipeQAProcessor:
         if len(steps) < 1:
             return qa_pairs
         
-        # 조리 과정을 context로 만들기
-        context = f"{recipe_name} 만드는 방법: " + " ".join(steps[:3])
+        # 조리 과정을 context로 만들기 (더 상세하게)
+        context = f"{recipe_name} 만드는 방법: " + " ".join(steps)
         
         for template in self.qa_templates['cooking_method']:
             question = template.format(recipe_name=recipe_name)
             
-            # 답변은 첫 번째 조리 단계로 설정
-            answer = steps[0] if steps else ""
+            # context 전체를 answer로 사용!
+            answer = context
             
-            if answer:
-                qa_pairs.append({
-                    'question': question,
-                    'context': context,
-                    'answer': answer,
-                    'type': 'cooking_method'
-                })
+            qa_pairs.append({
+                'question': question,
+                'context': context,
+                'answer': answer,
+                'type': 'cooking_method'
+            })
         
         return qa_pairs
     
@@ -114,15 +119,15 @@ class RecipeQAProcessor:
         if len(ingredients) < 1:
             return qa_pairs
         
-        # 재료 목록을 context로 만들기
-        ingredients_text = ", ".join(ingredients[:5])
+        # 재료 목록을 context로 만들기 (모든 재료 포함)
+        ingredients_text = ", ".join(ingredients)
         context = f"{recipe_name}의 재료: {ingredients_text}"
         
         for template in self.qa_templates['ingredients']:
             question = template.format(recipe_name=recipe_name)
             
-            # 답변은 주요 재료 3개로 설정
-            answer = ", ".join(ingredients[:3])
+            # context 전체를 answer로 사용!
+            answer = context
             
             qa_pairs.append({
                 'question': question,
@@ -151,14 +156,14 @@ class RecipeQAProcessor:
                 # 중복 제거
                 unique_recipes = list(set(recipe_names))
                 
-                # context는 해당 재료로 만들 수 있는 요리들
-                context = f"{ingredient}로 만들 수 있는 요리: " + ", ".join(unique_recipes[:5])
+                # context는 해당 재료로 만들 수 있는 요리들 (더 많이 포함)
+                context = f"{ingredient}로 만들 수 있는 요리: " + ", ".join(unique_recipes)
                 
                 for template in self.qa_templates['recipe_search']:
                     question = template.format(ingredient=ingredient)
                     
-                    # 답변은 대표 요리 2개
-                    answer = ", ".join(unique_recipes[:2])
+                    # context 전체를 answer로 사용!
+                    answer = context
                     
                     qa_pairs.append({
                         'question': question,
@@ -181,14 +186,13 @@ class RecipeQAProcessor:
             # BERT 입력 형태로 변환
             input_text = f"[CLS] {question} [SEP] {context} [SEP]"
             
-            # 답변의 시작과 끝 위치 찾기
+            # 답변의 시작과 끝 위치 찾기 (context = answer이므로 context 시작 위치)
             context_start = input_text.find(context)
-            answer_start = context.find(answer)
             
-            if answer_start != -1:
-                # 전체 텍스트에서의 실제 위치 계산
-                actual_answer_start = context_start + answer_start
-                actual_answer_end = actual_answer_start + len(answer) - 1
+            if context_start != -1:
+                # context 전체가 답변이므로
+                actual_answer_start = context_start
+                actual_answer_end = context_start + len(context) - 1
                 
                 processed_data.append({
                     'input_text': input_text,
@@ -247,7 +251,7 @@ class RecipeQAProcessor:
         for i, sample in enumerate(processed_data[:3]):
             print(f"\n샘플 {i+1}:")
             print(f"질문: {sample['question']}")
-            print(f"답변: {sample['answer']}")
+            print(f"답변: {sample['answer'][:100]}..." if len(sample['answer']) > 100 else f"답변: {sample['answer']}")
             print(f"타입: {sample['type']}")
 
 if __name__ == "__main__":

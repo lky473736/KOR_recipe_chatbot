@@ -127,9 +127,9 @@ def main():
             print("브라우저에서 http://localhost:5000 에 접속하세요!")
             
             # Flask 앱 실행
-            os.system("python app.py")
+            os.system("python3 app.py")
         else:
-            print("\n수동으로 실행하려면: python app.py")
+            print("\n수동으로 실행하려면: python3 app.py")
     
     print("\n🍳 레시피 챗봇 설정 완료!")
 
