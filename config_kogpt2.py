@@ -1,5 +1,5 @@
 """
-레시피 챗봇 설정 파일 (KoGPT2 버전)
+레시피 챗봇 설정 파일 (KoGPT2 버전) - 개선됨
 """
 import os
 
@@ -18,7 +18,7 @@ MAX_LENGTH = 512
 BATCH_SIZE = 4  # GPU 메모리에 따라 조절
 LEARNING_RATE = 5e-5
 NUM_EPOCHS = 3
-GENERATION_MAX_LENGTH = 200
+GENERATION_MAX_LENGTH = 150  # 답변 생성 최대 길이
 
 # 특수 토큰
 PROMPT_FORMAT = "질문: {question}\n답변:"
@@ -39,14 +39,29 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 os.makedirs(TEMPLATES_DIR, exist_ok=True)
 
-# 생성 설정
+# 생성 설정 (개선됨)
 GENERATION_CONFIG = {
     'max_length': GENERATION_MAX_LENGTH,
-    'temperature': 0.7,
-    'top_p': 0.9,
-    'top_k': 50,
-    'repetition_penalty': 1.2,
+    'temperature': 0.8,  # 조금 더 창의적으로
+    'top_p': 0.85,      # 더 집중된 선택
+    'top_k': 40,        # 적절한 다양성
+    'repetition_penalty': 1.3,  # 반복 방지 강화
     'do_sample': True,
-    'pad_token_id': 1,
-    'eos_token_id': 1
+    'pad_token_id': 1,  # 기본값, 런타임에서 재설정됨
+    'eos_token_id': 1   # 기본값, 런타임에서 재설정됨
 }
+
+# 디버그 설정
+DEBUG = True
+VERBOSE_LOGGING = True
+
+# 성능 설정
+TORCH_SEED = 42
+USE_MIXED_PRECISION = False  # GPU 메모리가 충분하지 않으면 True로 설정
+
+print(f"📁 설정 로드 완료:")
+print(f"  - 데이터 디렉토리: {DATA_DIR}")
+print(f"  - 모델 디렉토리: {MODEL_DIR}")
+print(f"  - 모델 경로: {MODEL_PATH}")
+print(f"  - 원본 데이터: {RAW_DATA_PATH}")
+print(f"  - 전처리 데이터: {PROCESSED_DATA_PATH}")

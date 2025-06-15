@@ -1,16 +1,16 @@
 """
-레시피 챗봇 Flask 웹 앱
+레시피 챗봇 Flask 웹 앱 (KoGPT2 버전)
 """
 from flask import Flask, render_template, request, jsonify
 import json
-from chatbot import RecipeChatbot
+from chatbot_kogpt2 import KoGPT2RecipeChatbot  # KoGPT2 챗봇 사용
 
 app = Flask(__name__)
 
 # 챗봇 초기화
-print("챗봇 초기화 중...")
-chatbot = RecipeChatbot()
-print("챗봇 준비 완료!")
+print("KoGPT2 챗봇 초기화 중...")
+chatbot = KoGPT2RecipeChatbot()
+print("KoGPT2 챗봇 준비 완료!")
 
 @app.route('/')
 def index():
@@ -50,7 +50,9 @@ def health():
     """헬스 체크"""
     return jsonify({
         'status': 'healthy',
-        'recipes_count': len(chatbot.recipes) if hasattr(chatbot, 'recipes') else 0
+        'model_type': 'KoGPT2',
+        'recipes_count': len(chatbot.recipes) if hasattr(chatbot, 'recipes') else 0,
+        'model_loaded': hasattr(chatbot, 'model') and chatbot.model is not None
     })
 
 if __name__ == '__main__':
