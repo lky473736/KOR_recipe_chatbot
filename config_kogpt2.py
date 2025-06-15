@@ -17,8 +17,8 @@ MODEL_NAME = "skt/kogpt2-base-v2"
 MAX_LENGTH = 512
 BATCH_SIZE = 4  # GPU 메모리에 따라 조절
 LEARNING_RATE = 5e-5
-NUM_EPOCHS = 3
-GENERATION_MAX_LENGTH = 150  # 답변 생성 최대 길이
+NUM_EPOCHS = 10
+GENERATION_MAX_LENGTH = 350  # 답변 생성 최대 길이
 
 # 특수 토큰
 PROMPT_FORMAT = "질문: {question}\n답변:"

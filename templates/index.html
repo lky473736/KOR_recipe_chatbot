@@ -3,41 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍳 레시피 챗봇</title>
+    <title>🍳 KoGPT2 기반의 한식 레시피 챗봇</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            background-color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        
+        * {
+            font-family: 'Noto Sans KR', sans-serif;
         }
         
+        body {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #fd79a8 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 떠다니는 음식 이모티콘 배경 */
+        .floating-emoji {
+            position: fixed;
+            opacity: 0.25;
+            pointer-events: none;
+            z-index: 1;
+            animation: float 25s infinite ease-in-out;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.1));
+        }
+        
+        .floating-emoji.size-small { font-size: 1.5rem; opacity: 0.2; }
+        .floating-emoji.size-medium { font-size: 2.5rem; opacity: 0.25; }
+        .floating-emoji.size-large { font-size: 3.5rem; opacity: 0.3; }
+        .floating-emoji.size-xlarge { font-size: 4.5rem; opacity: 0.15; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+            25% { transform: translateY(-30px) rotate(90deg) scale(1.1); }
+            50% { transform: translateY(-60px) rotate(180deg) scale(0.9); }
+            75% { transform: translateY(-30px) rotate(270deg) scale(1.05); }
+        }
+        
+        .floating-emoji:nth-child(1) { top: 5%; left: 8%; animation-delay: 0s; }
+        .floating-emoji:nth-child(2) { top: 15%; left: 85%; animation-delay: 2s; }
+        .floating-emoji:nth-child(3) { top: 45%; left: 3%; animation-delay: 4s; }
+        .floating-emoji:nth-child(4) { top: 65%; left: 92%; animation-delay: 6s; }
+        .floating-emoji:nth-child(5) { top: 25%; left: 45%; animation-delay: 8s; }
+        .floating-emoji:nth-child(6) { top: 75%; left: 15%; animation-delay: 10s; }
+        .floating-emoji:nth-child(7) { top: 12%; left: 65%; animation-delay: 12s; }
+        .floating-emoji:nth-child(8) { top: 55%; left: 78%; animation-delay: 14s; }
+        .floating-emoji:nth-child(9) { top: 35%; left: 25%; animation-delay: 16s; }
+        .floating-emoji:nth-child(10) { top: 85%; left: 60%; animation-delay: 18s; }
+        .floating-emoji:nth-child(11) { top: 8%; left: 35%; animation-delay: 20s; }
+        .floating-emoji:nth-child(12) { top: 60%; left: 8%; animation-delay: 22s; }
+        .floating-emoji:nth-child(13) { top: 40%; left: 88%; animation-delay: 24s; }
+        .floating-emoji:nth-child(14) { top: 78%; left: 40%; animation-delay: 26s; }
+        .floating-emoji:nth-child(15) { top: 20%; left: 20%; animation-delay: 28s; }
+        .floating-emoji:nth-child(16) { top: 50%; left: 55%; animation-delay: 30s; }
+        .floating-emoji:nth-child(17) { top: 90%; left: 80%; animation-delay: 32s; }
+        .floating-emoji:nth-child(18) { top: 30%; left: 75%; animation-delay: 34s; }
+        .floating-emoji:nth-child(19) { top: 70%; left: 30%; animation-delay: 36s; }
+        .floating-emoji:nth-child(20) { top: 18%; left: 50%; animation-delay: 38s; }
+        
         .chat-container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 20px auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
             overflow: hidden;
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 10;
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
         
         .chat-header {
-            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            background: linear-gradient(135deg, #ff6b6b, #ffa500, #ff4757);
             color: white;
-            padding: 20px;
+            padding: 30px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chat-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 50%);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hero-emoji {
+            font-size: 64px;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .chat-header h2 {
+            font-weight: 700;
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        
+        .chat-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
         }
         
         .chat-messages {
-            height: 400px;
+            height: 450px;
             overflow-y: auto;
-            padding: 20px;
-            background-color: #f8f9fa;
+            padding: 25px;
+            background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+            position: relative;
+        }
+        
+        .chat-messages::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(255, 107, 107, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 71, 87, 0.05) 0%, transparent 50%);
+            pointer-events: none;
         }
         
         .message {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             display: flex;
             align-items: flex-start;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
         }
         
         .message.user {
@@ -45,97 +171,197 @@
         }
         
         .message-content {
-            max-width: 70%;
-            padding: 12px 15px;
-            border-radius: 18px;
+            max-width: 75%;
+            padding: 16px 20px;
+            border-radius: 20px;
             word-wrap: break-word;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .message-content:hover {
+            transform: translateY(-2px);
         }
         
         .message.bot .message-content {
-            background-color: #e9ecef;
+            background: linear-gradient(135deg, #e9ecef, #ffffff);
             color: #333;
             margin-left: 10px;
+            border: 1px solid rgba(255, 107, 107, 0.2);
         }
         
         .message.user .message-content {
-            background-color: #007bff;
+            background: linear-gradient(135deg, #007bff, #0056b3);
             color: white;
             margin-right: 10px;
         }
         
         .message-emoji {
-            font-size: 24px;
-            margin-right: 8px;
+            font-size: 28px;
+            margin-right: 12px;
+            margin-left: 12px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
         
         .chat-input {
-            padding: 20px;
-            background-color: white;
-            border-top: 1px solid #e9ecef;
+            padding: 25px;
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            border-top: 2px solid rgba(255, 107, 107, 0.1);
         }
         
         .input-group {
-            border-radius: 25px;
+            border-radius: 30px;
             overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
         
         .form-control {
-            border: 2px solid #e9ecef;
-            border-radius: 25px 0 0 25px;
-            padding: 12px 20px;
+            border: 3px solid #e9ecef;
+            border-radius: 30px 0 0 30px;
+            padding: 15px 25px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25);
         }
         
         .btn-primary {
-            border-radius: 0 25px 25px 0;
-            padding: 12px 25px;
-            background: linear-gradient(135deg, #007bff, #0056b3);
+            border-radius: 0 30px 30px 0;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #ff6b6b, #ff4757);
             border: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #ff4757, #ff3742);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
         }
         
         .typing-indicator {
             display: none;
-            padding: 10px;
+            padding: 15px 25px;
             font-style: italic;
             color: #666;
+            text-align: center;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
         .quick-buttons {
-            padding: 15px 20px 0;
+            padding: 20px 25px;
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(248,249,250,0.8));
+            border-bottom: 1px solid rgba(255, 107, 107, 0.1);
         }
         
         .btn-quick {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 20px;
-            padding: 8px 15px;
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            padding: 10px 18px;
             font-size: 14px;
             color: #495057;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         
         .btn-quick:hover {
-            background-color: #007bff;
+            background: linear-gradient(135deg, #ff6b6b, #ff4757);
             color: white;
-            border-color: #007bff;
+            border-color: #ff6b6b;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
         }
         
-        .hero-emoji {
-            font-size: 48px;
-            margin-bottom: 15px;
+        /* 스크롤바 커스터마이징 */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            border-radius: 10px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #ff4757, #ff8c00);
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .chat-container {
+                margin: 10px;
+                border-radius: 20px;
+            }
+            
+            .hero-emoji {
+                font-size: 48px;
+            }
+            
+            .chat-header h2 {
+                font-size: 1.8rem;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+            
+            .floating-emoji.size-small { font-size: 1.2rem; }
+            .floating-emoji.size-medium { font-size: 2rem; }
+            .floating-emoji.size-large { font-size: 2.8rem; }
+            .floating-emoji.size-xlarge { font-size: 3.5rem; }
         }
     </style>
 </head>
 <body>
+    <!-- 떠다니는 음식 이모티콘 배경 -->
+    <div class="floating-emoji size-large">🍕</div>
+    <div class="floating-emoji size-medium">🍔</div>
+    <div class="floating-emoji size-xlarge">🍜</div>
+    <div class="floating-emoji size-small">🥘</div>
+    <div class="floating-emoji size-medium">🍱</div>
+    <div class="floating-emoji size-large">🥗</div>
+    <div class="floating-emoji size-small">🍳</div>
+    <div class="floating-emoji size-xlarge">🥞</div>
+    <div class="floating-emoji size-medium">🌮</div>
+    <div class="floating-emoji size-large">🍝</div>
+    <div class="floating-emoji size-small">🥯</div>
+    <div class="floating-emoji size-medium">🧇</div>
+    <div class="floating-emoji size-xlarge">🥙</div>
+    <div class="floating-emoji size-small">🌯</div>
+    <div class="floating-emoji size-large">🥪</div>
+    <div class="floating-emoji size-medium">🍲</div>
+    <div class="floating-emoji size-small">🍛</div>
+    <div class="floating-emoji size-xlarge">🍣</div>
+    <div class="floating-emoji size-medium">🍤</div>
+    <div class="floating-emoji size-large">🥟</div>
+
     <div class="container-fluid">
         <div class="chat-container">
             <!-- 채팅 헤더 -->
             <div class="chat-header">
                 <div class="hero-emoji">🍳</div>
-                <h2 class="mb-2">레시피 챗봇</h2>
-                <p class="mb-0">요리에 대해 무엇이든 물어보세요!</p>
+                <h2 class="mb-2">KoGPT2 기반 한식 레시피 챗봇</h2>
+                <p class="mb-0">자연어처리및응용 202334734 컴퓨터공학전공 임규연</p>
             </div>
             
             <!-- 빠른 버튼 -->
@@ -143,14 +369,14 @@
                 <button class="btn btn-quick" onclick="sendQuickMessage('김치찌개 만드는 법')">
                     🥘 김치찌개 만들기
                 </button>
-                <button class="btn btn-quick" onclick="sendQuickMessage('감자로 뭐 만들 수 있어?')">
-                    🥔 감자 요리
+                <button class="btn btn-quick" onclick="sendQuickMessage('잔치국수 만드는 법')">
+                    🍜 잔치국수 만들기
                 </button>
                 <button class="btn btn-quick" onclick="sendQuickMessage('불고기 재료가 뭐야?')">
                     🥩 불고기 재료
                 </button>
-                <button class="btn btn-quick" onclick="sendQuickMessage('간단한 요리 추천해줘')">
-                    ⚡ 간단 요리
+                <button class="btn btn-quick" onclick="sendQuickMessage('요리 추천해줘')">
+                    ⚡ 요리 추천
                 </button>
             </div>
             
@@ -159,14 +385,15 @@
                 <div class="message bot">
                     <span class="message-emoji">🤖</span>
                     <div class="message-content">
-                        안녕하세요! 레시피 챗봇입니다. 요리에 대해 무엇이든 물어보세요! 😊
+                        안녕하세요! 저는 여러분의 요리 파트너 레시피 챗봇입니다! 🍳✨<br>
+                        어떤 맛있는 요리를 만들어볼까요? 궁금한 레시피나 요리 팁이 있으시면 언제든 물어보세요! 😊👨‍🍳
                     </div>
                 </div>
             </div>
             
             <!-- 타이핑 인디케이터 -->
             <div class="typing-indicator" id="typingIndicator">
-                🤖 챗봇이 답변을 준비하고 있습니다...
+                🤖 레시피를 찾고 있어요... 잠시만 기다려주세요! ✨
             </div>
             
             <!-- 채팅 입력 -->
@@ -176,11 +403,11 @@
                         type="text" 
                         class="form-control" 
                         id="messageInput" 
-                        placeholder="예: 김치찌개 어떻게 만들어?"
+                        placeholder="예: 불고기 어떻게 만들어?"
                         onkeypress="handleKeyPress(event)"
                     >
                     <button class="btn btn-primary" type="button" onclick="sendMessage()">
-                        전송 📤
+                        전송 🚀
                     </button>
                 </div>
             </div>
@@ -202,7 +429,7 @@
             } else {
                 messageDiv.innerHTML = `
                     <div class="message-content">${content}</div>
-                    <span class="message-emoji">👤</span>
+                    <span class="message-emoji">👨‍🍳</span>
                 `;
             }
             
@@ -246,13 +473,13 @@
                 if (data.success) {
                     addMessage(data.response, 'bot');
                 } else {
-                    addMessage('죄송합니다. 오류가 발생했습니다: ' + data.error, 'bot');
+                    addMessage('앗! 요리하다가 실수했네요 🙈 다시 시도해주세요: ' + data.error, 'bot');
                 }
             })
             .catch(error => {
                 hideTyping();
                 console.error('Error:', error);
-                addMessage('서버 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.', 'bot');
+                addMessage('주방에서 문제가 생겼어요! 🔥 잠시 후 다시 시도해주세요 😅', 'bot');
             });
         }
         
@@ -271,6 +498,34 @@
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('messageInput').focus();
         });
+        
+        // 떠다니는 이모티콘 추가 생성
+        function createFloatingEmoji() {
+            const emojis = ['🍎', '🥕', '🧄', '🧅', '🌶️', '🥬', '🍅', '🥒', '🥑', '🍊', '🥝', '🍓', '🫐', '🥥', '🍉', '🥭', '🍌', '🍍', '🥔', '🌽', '🥖', '🧀', '🥓', '🍖', '🥩', '🐟', '🦐', '🥚', '🍯', '🥜'];
+            const sizes = ['size-small', 'size-medium', 'size-large', 'size-xlarge'];
+            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+            const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+            
+            const emojiElement = document.createElement('div');
+            emojiElement.className = `floating-emoji ${randomSize}`;
+            emojiElement.textContent = randomEmoji;
+            emojiElement.style.left = Math.random() * 90 + '%';
+            emojiElement.style.top = Math.random() * 90 + '%';
+            emojiElement.style.animationDelay = Math.random() * 25 + 's';
+            emojiElement.style.animationDuration = (20 + Math.random() * 15) + 's';
+            
+            document.body.appendChild(emojiElement);
+            
+            // 40초 후 제거
+            setTimeout(() => {
+                if (emojiElement.parentNode) {
+                    emojiElement.parentNode.removeChild(emojiElement);
+                }
+            }, 40000);
+        }
+        
+        // 7초마다 새로운 떠다니는 이모티콘 추가
+        setInterval(createFloatingEmoji, 7000);
     </script>
 </body>
 </html>
